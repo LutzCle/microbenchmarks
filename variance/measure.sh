@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gcc -o measure timer.c cle_math.c measure.c
+gcc -O2 -o measure timer.c cle_math.c measure.c
