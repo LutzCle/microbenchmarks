@@ -8,46 +8,54 @@
 #include <gsl/gsl_statistics_double.h>
 
 #define SIZE 1000000
+#define ALIGNMENT 16 /* satisfy 16-byte alignment for SSE2 load instructions */
+
+typedef double (*VarianceFunc)(double const*, size_t);
+typedef struct FuncDesc {
+    VarianceFunc function;
+    char const* description;
+} FuncDesc;
 
 double variance_gmp(double const* vals, size_t n);
 
 void run(double const* vals, size_t n) {
-    double stddev_one = 0;
-    double var_oneu = 0;
-    double stddev_two = 0;
-    double var_wel = 0;
-    double var_gsl = 0;
-    double mean_gsl = 0;
-    double var_gmp = 0;
-    double diff_one = 0;
-    double diff_oneu = 0;
-    double diff_two = 0;
-    double diff_wel = 0;
-    double diff_gsl = 0;
+    FuncDesc functions[] = {
+        {&variance_onepass, "OnePass"},
+        {&variance_onepass_sse3, "OnePassSSE3"},
+        {&variance_onepass_kbn, "OnePassKBN"},
+        {&variance_onepass_kbn_sse4_1, "OnePassKBNSSE4.1"},
+        {&variance_onepass_naive, "OnePassNaive"},
+        {&variance_welford, "Welford"},
+        {&variance_twopass, "TwoPass"}
+    };
 
-    stddev_one = variance_onepass(vals, n);
-    stddev_two = variance_twopass(vals, n);
-    var_oneu = variance_onepass_uncompensated(vals, n);
-    var_wel = variance_welford(vals, n);
+    const size_t num_functions = sizeof(functions) / sizeof(FuncDesc);
 
-    mean_gsl = gsl_stats_mean(vals, 1, n);
-    var_gsl = gsl_stats_variance_with_fixed_mean(vals, 1, n, mean_gsl);
+    double variances[num_functions];
+    double errors[num_functions];
+    double var_gmp;
+    double mean_gsl;
+    double var_gsl;
+    double err_gsl;
 
     var_gmp = variance_gmp(vals, n);
 
-    diff_one = var_gmp - stddev_one;
-    diff_oneu = var_gmp - var_oneu;
-    diff_two = var_gmp - stddev_two;
-    diff_wel = var_gmp - var_wel;
-    diff_gsl = var_gmp - var_gsl;
+    mean_gsl = gsl_stats_mean(vals, 1, n);
+    var_gsl = gsl_stats_variance_with_fixed_mean(vals, 1, n, mean_gsl);
+    err_gsl = var_gmp - var_gsl;
+
+    for (size_t i = 0; i != num_functions; ++i) {
+        variances[i] = functions[i].function(vals, n);
+        errors[i] = var_gmp - variances[i];
+    }
 
     printf("Variances (difference from GMP)\n");
     printf("GMP: %f\n", var_gmp);
-    printf("GSL: %f (%f)\n", var_gsl, diff_gsl);
-    printf("OnePass: %f (%f)\n", stddev_one, diff_one);
-    printf("OnePassU: %f (%f)\n", var_oneu, diff_oneu);
-    printf("TwoPass: %f (%f)\n", stddev_two, diff_two);
-    printf("Welfold: %f (%f)\n", var_wel, diff_wel);
+    printf("GSL: %f (%f)\n", var_gsl, err_gsl);
+    for (size_t i = 0; i != num_functions; ++i) {
+        printf("%s: %f (%f)\n",
+                functions[i].description, variances[i], errors[i]);
+    }
 }
 
 /*
@@ -177,8 +185,8 @@ void test_alternating(double * vals, size_t n) {
 }
 
 int main() {
-    double *vals = malloc(SIZE * sizeof(double));
-    if (vals == NULL) {
+    double *vals = NULL;
+    if(posix_memalign((void*)&vals, ALIGNMENT, SIZE * sizeof(double)) != 0) {
         fprintf(stderr, "Failed to malloc value array\n");
     }
 
