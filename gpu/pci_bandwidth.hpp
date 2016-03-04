@@ -10,10 +10,23 @@
 #ifndef PCI_BANDWIDTH_HPP
 #define PCI_BANDWIDTH_HPP
 
-namespace GpuBench {
+#ifdef MAC
+#include <OpenCL/cl.hpp>
+#else
+#include <CL/cl.hpp>
+#endif
+
+namespace gpubench {
     class PciBandwidth {
     public:
+        void set_cl_context(cl::Context context);
+        void set_cl_commandqueue(cl::CommandQueue queue);
+
         int run();
+
+    private:
+        cl::Context context_;
+        cl::CommandQueue commandqueue_;
     };
 }
 

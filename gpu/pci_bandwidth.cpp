@@ -22,7 +22,15 @@
 #include <CL/cl.hpp>
 #endif
 
-int GpuBench::PciBandwidth::run() {
+void gpubench::PciBandwidth::set_cl_context(cl::Context context) {
+    context_ = context;
+}
+
+void gpubench::PciBandwidth::set_cl_commandqueue(cl::CommandQueue queue) {
+    commandqueue_ = queue;
+}
+
+int gpubench::PciBandwidth::run() {
 
     cl_int err;
 
