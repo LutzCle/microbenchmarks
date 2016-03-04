@@ -48,7 +48,7 @@ int gpubench::PciBandwidth::run() {
 
     cle::TypedBuffer<cl_int> d_regular_buffer(
             context_,
-            CL_MEM_READ_WRITE,
+            CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
             buffer_size,
             h_regular_buffer.data()
             );
