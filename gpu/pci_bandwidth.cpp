@@ -30,11 +30,11 @@ void gpubench::PciBandwidth::set_cl_commandqueue(cl::CommandQueue queue) {
     commandqueue_ = queue;
 }
 
-int gpubench::PciBandwidth::run() {
+int gpubench::PciBandwidth::run(size_t buffer_bytes) {
 
     cl_int err;
 
-    size_t buffer_size = 1024 * 1024 * 64;
+    size_t buffer_size = buffer_bytes / sizeof(cl_int);
 
     cl::Event map_event;
     cl::Event unmap_event;

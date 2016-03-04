@@ -22,7 +22,7 @@ namespace gpubench {
         void set_cl_context(cl::Context context);
         void set_cl_commandqueue(cl::CommandQueue queue);
 
-        int run();
+        int run(size_t buffer_bytes);
 
     private:
         cl::Context context_;

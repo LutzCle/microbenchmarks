@@ -41,6 +41,9 @@ public:
              "OpenCL device number")
             ("gpumembw", "GPU Memory Bandwidth")
             ("pcibw", "PCI Bandwidth")
+            ("buffersize",
+             po::value<size_t>(&buffer_size_)->default_value(256),
+             "Buffer size in MiB")
             ;
 
         po::variables_map vm;
@@ -70,6 +73,10 @@ public:
             mode_ = Mode::PciBandwidth;
         }
 
+        if (vm.count("buffersize")) {
+            buffer_size_ = vm["buffersize"].as<size_t>();
+        }
+
         return 1;
     }
 
@@ -85,10 +92,15 @@ public:
         return device_;
     }
 
+    size_t buffer_bytes() const {
+        return buffer_size_ * 1024 * 1024;
+    }
+
 private:
     Mode mode_;
     unsigned int platform_;
     unsigned int device_;
+    size_t buffer_size_;
 };
 
 int main(int argc, char **argv) {
@@ -119,7 +131,7 @@ int main(int argc, char **argv) {
             pcibw.set_cl_context(initializer.get_context());
             pcibw.set_cl_commandqueue(initializer.get_commandqueue());
 
-            ret = pcibw.run();
+            ret = pcibw.run(options.buffer_bytes());
             if (ret < 0) {
                 return 1;
             }
