@@ -106,6 +106,9 @@ int main(int argc, char **argv) {
     if (initializer.init(options.cl_platform(), options.cl_device()) < 0) {
         return 1;
     }
+    cle_sanitize_done_return(
+            initializer.print_device_info()
+            );
 
     switch (options.get_mode()) {
         case CmdOptions::Mode::GpuMemBandwidth:
