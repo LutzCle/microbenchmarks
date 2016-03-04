@@ -177,7 +177,7 @@ int gpubench::PciBandwidth::run(size_t buffer_bytes) {
         uint64_t duration;
         GpuBench::event_nanoseconds(*events[i], duration);
 
-        ss << (buffer_bytes / duration) / 1000 / 1000 / 1000;
+        ss << duration / 1000;
 
         if (i != num_events - 1) {
             ss << ',';
