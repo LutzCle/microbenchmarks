@@ -42,6 +42,7 @@ int gpubench::PciBandwidth::run(size_t buffer_bytes) {
     cl::Event regular_read_event;
     cl::Event pinned_write_event;
     cl::Event pinned_read_event;
+    cl::Event pinned_copy_read_event;
 
     std::vector<cl_int> h_regular_buffer(buffer_size);
     cl_int *h_pinned_buffer_ptr = NULL;
@@ -134,34 +135,36 @@ int gpubench::PciBandwidth::run(size_t buffer_bytes) {
                 &unmap_event
                 ));
 
-    // cle_sanitize_val_return(
-    //         queue.enqueueCopyBuffer(
-    //             d_pinned_buffer,
-    //             h_pinned_buffer,
-    //             0,
-    //             0,
-    //             h_pinned_buffer.bytes(),
-    //             NULL,
-    //             &pinned_read_event
-    //             ));
+    cle_sanitize_val_return(
+            commandqueue_.enqueueCopyBuffer(
+                d_pinned_buffer,
+                h_pinned_buffer,
+                0,
+                0,
+                h_pinned_buffer.bytes(),
+                NULL,
+                &pinned_copy_read_event
+                ));
 
-    int num_events = 6;
+    int num_events = 7;
     char const* names[] = {
-        "regular read",
-        "regular write",
+        "regular read buffer",
+        "regular write buffer",
         "pinned map",
         "pinned unmap",
-        "pinned read",
-        "pinned write"
+        "pinned read buffer",
+        "pinned write buffer",
+        "pinned copy read"
     };
 
     cl::Event const* events[] = {
-        &regular_write_event,
         &regular_read_event,
+        &regular_write_event,
         &map_event,
         &unmap_event,
+        &pinned_read_event,
         &pinned_write_event,
-        &pinned_read_event
+        &pinned_copy_read_event
     };
 
     std::stringstream ss;
