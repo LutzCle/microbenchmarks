@@ -34,15 +34,7 @@ int gpubench::PciBandwidth::run() {
 
     cl_int err;
 
-    cle::CLInitializer initializer;
-    if (initializer.init(0, 0) < 0) {
-        return -1;
-    }
-
     size_t buffer_size = 1024 * 1024 * 64;
-
-    cl::Context context = initializer.get_context();
-    cl::CommandQueue queue = initializer.get_commandqueue();
 
     cl::Event map_event;
     cl::Event unmap_event;
@@ -55,21 +47,21 @@ int gpubench::PciBandwidth::run() {
     cl_int *h_pinned_buffer_ptr = NULL;
 
     cle::TypedBuffer<cl_int> d_regular_buffer(
-            context,
+            context_,
             CL_MEM_READ_WRITE,
             buffer_size,
             h_regular_buffer.data()
             );
 
     cle::TypedBuffer<cl_int> h_pinned_buffer(
-            context,
+            context_,
             CL_MEM_ALLOC_HOST_PTR | CL_MEM_READ_WRITE,
             buffer_size,
             NULL
             );
 
     cle::TypedBuffer<cl_int> d_pinned_buffer(
-            context,
+            context_,
             CL_MEM_READ_WRITE,
             buffer_size,
             NULL
@@ -77,7 +69,7 @@ int gpubench::PciBandwidth::run() {
 
     // Regular read / write tests
     cle_sanitize_val_return(
-            queue.enqueueWriteBuffer(
+            commandqueue_.enqueueWriteBuffer(
                 d_regular_buffer,
                 CL_FALSE,
                 0,
@@ -87,7 +79,7 @@ int gpubench::PciBandwidth::run() {
                 &regular_write_event));
 
     cle_sanitize_val_return(
-            queue.enqueueReadBuffer(
+            commandqueue_.enqueueReadBuffer(
                 d_regular_buffer,
                 CL_FALSE,
                 0,
@@ -98,7 +90,7 @@ int gpubench::PciBandwidth::run() {
 
     // Pin memory
     cle_sanitize_ref_return(
-            h_pinned_buffer_ptr = (cl_int *) queue.enqueueMapBuffer(
+            h_pinned_buffer_ptr = (cl_int *) commandqueue_.enqueueMapBuffer(
                 h_pinned_buffer,
                 CL_TRUE,
                 CL_MAP_WRITE_INVALIDATE_REGION,
@@ -112,7 +104,7 @@ int gpubench::PciBandwidth::run() {
 
     // Pinned memory write test
     cle_sanitize_val_return(
-            queue.enqueueWriteBuffer(
+            commandqueue_.enqueueWriteBuffer(
                 d_pinned_buffer,
                 CL_FALSE,
                 0,
@@ -124,7 +116,7 @@ int gpubench::PciBandwidth::run() {
 
     // Pinned memory read test
     cle_sanitize_val_return(
-            queue.enqueueReadBuffer(
+            commandqueue_.enqueueReadBuffer(
                 d_pinned_buffer,
                 CL_FALSE,
                 0,
@@ -135,7 +127,7 @@ int gpubench::PciBandwidth::run() {
 
     // Unpin memory
     cle_sanitize_val_return(
-            queue.enqueueUnmapMemObject(
+            commandqueue_.enqueueUnmapMemObject(
                 h_pinned_buffer,
                 h_pinned_buffer_ptr,
                 NULL,
